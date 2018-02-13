@@ -61,6 +61,7 @@ public final class SelectorThread extends Thread implements NetworkServer
 	private final long CLOSE_TIMEOUT;
 	private final InetAddress BIND_ADDRESS;
 	private final int BIND_PORT;
+	private final int MAX_PACKET_SIZE;
 	
 	// Main Buffers
 	private final ByteBuffer DIRECT_WRITE_BUFFER;
@@ -91,6 +92,7 @@ public final class SelectorThread extends Thread implements NetworkServer
 		MAX_SEND_PER_PASS = cfg.getMaxSendPerPass();
 		SLEEP_TIME = cfg.getSelectorSleepTime();
 		CLOSE_TIMEOUT = cfg.getCloseTimeout();
+		MAX_PACKET_SIZE = cfg.getMaxPacketSize();
 		
 		DIRECT_WRITE_BUFFER = ByteBuffer.allocateDirect(cfg.getWriteBufferSize()).order(BYTE_ORDER);
 		WRITE_BUFFER = ByteBuffer.wrap(new byte[cfg.getWriteBufferSize()]).order(BYTE_ORDER);
@@ -344,6 +346,13 @@ public final class SelectorThread extends Thread implements NetworkServer
 			default:
 				// data size excluding header size :>
 				final int dataPending = (buf.getShort() & 0xFFFF) - HEADER_SIZE;
+				if(dataPending > MAX_PACKET_SIZE) {
+					closeConnectionImpl(key, con, true);
+					if (buf == READ_BUFFER) {
+						READ_BUFFER.clear();
+					}
+					return false;
+				}
 				
 				// do we got enough bytes for the packet?
 				if (dataPending <= buf.remaining())
