@@ -19,11 +19,27 @@ package com.l2jserver.mmocore;
 
 import java.nio.ByteBuffer;
 
+import f3.commons.nif.NetworkClient;
+import f3.commons.nif.NetworkPacket;
+
 /**
  * @author KenM
  * @param <T>
  */
-public interface IPacketHandler<T extends MMOClient<?>>
-{
-	public ReceivablePacket<T> handlePacket(ByteBuffer buf, T client);
+public abstract class AbstractPacket implements NetworkPacket {
+	ByteBuffer buffer;
+	MMOClient client;
+	
+	
+	public NetworkClient getClient() {
+		return client;
+	}
+	
+	public ByteBuffer getBuffer() {
+		return buffer;
+	}
+	
+	public void setBuffer(ByteBuffer buffer) {
+		this.buffer = buffer;
+	}
 }
