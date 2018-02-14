@@ -41,6 +41,8 @@ import f3.commons.nif.NetworkServer;
 import f3.commons.nif.NetworkServerConfiguration;
 import f3.commons.nif.OutcomeNetworkPacket;
 import f3.commons.nif.PacketSerializer;
+import f3.commons.uid.IdFactory;
+import f3.commons.uid.IntIdFactory;
 
 /**
  * Parts of design based on network core from WoodenGil
@@ -74,6 +76,8 @@ public final class SelectorThread extends Thread implements NetworkServer
 	
 	private final IncomePacketListener inPacketListener;
 	private final PacketSerializer packetSerializer;
+	
+	private final IdFactory<Integer> clientIdFactory = new IntIdFactory(1, 500_000, 0);
 	
 	private volatile boolean shutdown;
 	
@@ -271,7 +275,7 @@ public final class SelectorThread extends Thread implements NetworkServer
 				sc.configureBlocking(false);
 				SelectionKey clientKey = sc.register(selector, SelectionKey.OP_READ);
 				con = new MMOConnection(this, sc.socket(), clientKey);
-				con.setClient(new MMOClient(con)); //XXX
+				con.setClient(new MMOClient(clientIdFactory.getId(), con)); //XXX
 				clientKey.attach(con);
 			}
 		}
@@ -346,7 +350,7 @@ public final class SelectorThread extends Thread implements NetworkServer
 			default:
 				// data size excluding header size :>
 				final int dataPending = (buf.getShort() & 0xFFFF) - HEADER_SIZE;
-				if(dataPending > MAX_PACKET_SIZE) {
+				if(dataPending > MAX_PACKET_SIZE || dataPending < 0) {
 					closeConnectionImpl(key, con, true);
 					if (buf == READ_BUFFER) {
 						READ_BUFFER.clear();
@@ -639,6 +643,8 @@ public final class SelectorThread extends Thread implements NetworkServer
 			// cancel key
 			key.cancel();
 		}
+		
+		clientIdFactory.close(client.getRuntimeId());
 	}
 	
 	public final void shutdown()

@@ -32,16 +32,18 @@ import lombok.Getter;
 public class MMOClient implements NetworkClient {
 	private final NetworkClientListenerList listeners = new NetworkClientListenerList(this);
 	@Getter private final MMOConnection con;
+	private final int rid;
 	private boolean isAuthed;
 	private NetworkCipher cipher;
 	
-	public MMOClient(final MMOConnection con) {
+	public MMOClient(int rid, MMOConnection con) {
+		this.rid = rid;
 		this.con = con;
 	}
 
 	@Override
 	public int getRuntimeId() {
-		return 0;
+		return rid;
 	}
 
 	@Override
